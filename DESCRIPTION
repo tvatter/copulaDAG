@@ -1,0 +1,22 @@
+Package: copulaDAG
+Title: Copula based Directed Acyclic Graphs
+Version: 0.0.1
+Date: 2017-08-17
+Authors@R: c(
+    person("Thibault", "Vatter",, "thibault.vatter@gmail.com", role = c("aut", "cre"))
+    )
+Description: Tools to estimate directed acyclic graphs using copulas.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports:
+  assertthat,
+  igraph,
+  Hmisc,
+  rvinecopulib,
+  stats,
+  utils
+Suggests: 
+  testthat
+RoxygenNote: 6.0.1
+Roxygen: list(markdown = TRUE)

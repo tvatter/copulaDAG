@@ -1,0 +1,8 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+.travis.yml
+appveyor.yml
+^docs$
+cran-comments.md
+^.*\.directory^
+LICENSE
