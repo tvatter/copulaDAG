@@ -56,7 +56,7 @@ pairwise_direction <- function(x, y = NULL, cop = NULL, ...) {
                 msg = "cop should be a bicop object")
   }
 
-  # get pseudo-observations
+  # get pseudo-observations (i.e. F(X) and F(Y))
   n <- length(x)
   u1 <- rank(x)/(n+1)
   u2 <- rank(y)/(n+1)
@@ -73,15 +73,12 @@ pairwise_direction <- function(x, y = NULL, cop = NULL, ...) {
     cop <- do.call(bicop, pars)
   }
   
-  # get copula-based predictions
-  d <- outer(u1, u2, function(u, v) predict(object = cop, 
-                                              newdata = cbind(u, v), 
-                                              what = "pdf"))
-  xp <- apply(d, 2, function(u) sum(u*x)/sum(u))
-  yp <- apply(d, 1, function(u) sum(u*y)/sum(u))
+  # get copula-based predictions F(Y|X) and F(X|Y)
+  u1p <- predict(object = cop, newdata = cbind(u1,u2), what = "hfunc2")
+  u2p <- predict(object = cop, newdata = cbind(u1,u2), what = "hfunc1")
   
   # use hoeffd to infer direction
-  h1 <- hoeffd(x, xp)$D[2]
-  h2 <- hoeffd(y, yp)$D[2]
-  ifelse(h1 != h2, h1 < h2, hoeffd(x, y-yp)$D[2] < hoeffd(y, x-xp)$D[2])
+  h1 <- hoeffd(u2, u1p)$D[2] # F(Y) vs F(X|Y)
+  h2 <- hoeffd(u1, u2p)$D[2] # F(X) vs F(Y|X)
+  ifelse(h1 != h2, h1 < h2, NA)
 }
