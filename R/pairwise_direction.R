@@ -64,8 +64,8 @@ pairwise_direction <- function(x, y = NULL, cop = NULL, ...) {
   # if copula not provided, estimate it
   if (is.null(cop)) {
     # basic arguments
-    pars <- list(data = cbind(u1,u2), 
-                 family_set = "tll", 
+    pars <- list(data = cbind(u1,u2),
+                 family_set = "tll",
                  nonpar_method = "constant")
     # additional arguments
     pars <- modifyList(pars, list(...))
@@ -73,7 +73,7 @@ pairwise_direction <- function(x, y = NULL, cop = NULL, ...) {
     cop <- do.call(bicop, pars)
   }
   
-  # get copula-based predictions F(Y|X) and F(X|Y)
+  # get copula-based F(Y|X) and F(X|Y)
   u1p <- predict(object = cop, newdata = cbind(u1,u2), what = "hfunc2")
   u2p <- predict(object = cop, newdata = cbind(u1,u2), what = "hfunc1")
   

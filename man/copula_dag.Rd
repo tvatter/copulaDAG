@@ -4,7 +4,7 @@
 \alias{copula_dag}
 \title{Copula-based Directed Acyclic Graph}
 \usage{
-copula_dag(x, alpha = 0.1, skeleton = FALSE, ...)
+copula_dag(x, alpha = 0.1, pc = TRUE, skeleton = FALSE, ...)
 }
 \arguments{
 \item{x}{a matrix or data frame with more than two columns

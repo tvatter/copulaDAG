@@ -3,8 +3,12 @@
 #' @param x a matrix or data frame with more than two columns 
 #' (see \code{\link{pairwise_direction}} for the bivariate case)
 #' @param alpha a scalar number in (0,1) indicating the level of the test.
-#' @param skelecton a logical indicating whether the skeleton only should be 
+#' @param pc a logical indicating whether the PC algorithm should be used 
+#' to find the skeleton.
+#' @param skeleton a logical indicating whether the skeleton only should be 
 #' returned.
+#' @param fast a logical indicating whether the memory greedy (but faster) 
+#' method should be used.
 #' @param ... additional arguments passed to 
 #' \code{\link[rvinecopulib:bicop]{bicop}}
 #'
@@ -17,9 +21,13 @@
 #' TODO 
 #' @export
 #' @importFrom utils combn
-#' @importFrom igraph graph_from_edgelist
+#' @importFrom igraph graph_from_edgelist graph_from_adjacency_matrix as_edgelist
 #' @importFrom assertthat is.number is.flag
-copula_dag <- function(x, alpha = 0.1, skeleton = FALSE, ...) {
+#' @importFrom pcalg skeleton
+copula_dag <- function(x, alpha = 0.1, 
+                       pc = TRUE, 
+                       skeleton = FALSE, 
+                       fast = TRUE, ...) {
   
   # basic sanity checks
   assert_that(is.matrix(x) || is.data.frame(x),
@@ -29,10 +37,19 @@ copula_dag <- function(x, alpha = 0.1, skeleton = FALSE, ...) {
               msg = "all the elements of x should be numeric")
   assert_that(is.number(alpha) && alpha > 0 && alpha < 1,
               msg = "alpha should be a scalar in (0,1)")
+  assert_that(is.flag(pc))
   assert_that(is.flag(skeleton))
+  assert_that(is.flag(fast))
   
   # get pseudo-observations
   n <- nrow(x)
+  if (fast && n > 1e3) {
+    msg <- paste0("fast = TRUE is not available for sample sizes larger ",
+                  "than 1e3, switching to fast = FALSE.", collapse = "")
+    message(msg)
+    fast <- FALSE
+  }
+    
   d <- ncol(x)
   udata <- apply(x, 2, rank)/(n+1)
   
@@ -47,58 +64,63 @@ copula_dag <- function(x, alpha = 0.1, skeleton = FALSE, ...) {
   all_var <- 1:d
   all_comb <- t(combn(all_var, 2))
   
-  # fit a models and returns pdf required for the residuals for every combination
-  system.time(copdata <- lapply(1:nrow(all_comb), function(j) {
+  # fit a model for every combination
+  copdata <- lapply(1:nrow(all_comb), function(j) {
     # add data
     pars$data <- udata[,all_comb[j,]]
     # fit a bivariate copula
     cop <- do.call(bicop, pars)
-    # get pdf required for the residuals
-    outer(pars$data[,1], pars$data[,2], 
-          function(u1, u2) predict(object = cop, 
-                                   newdata = cbind(u1, u2), 
-                                   what = "pdf"))
-  }))
+  })
   
-  system.time(p_ures <- lapply(1:nrow(all_comb), function(k) {
-    ures <- get_pred(all_comb[k,1], all_comb[k,2], all_comb, udata, copdata)
-    list(p = hoeffd(ures[,1], ures[,2])$P[2],
-         ures = ures)
-  }))
-
-  # select pairs by p-values
-  sel_comb <- sapply(p_ures, function(x) x$p < alpha)
+  # for small sample sizes, we can pre-compute the require pdfs
+  if (fast) {
+    # return pdf required for the residuals for every combination
+    copdata <- lapply(1:nrow(all_comb), function(j) {
+      # get pdf required for the residuals
+      outer(udata[,all_comb[j,1]], udata[,all_comb[j,2]], 
+            function(u1, u2) predict(object = copdata[[j]], 
+                                     newdata = cbind(u1, u2), 
+                                     what = "pdf"))
+    })
+  }
   
-  if (skeleton) {
-    sel_comb <- all_comb[sel_comb, ]
+  
+  if (pc == TRUE) {
+    suffStat <- list(all_comb = all_comb, 
+                     udata = udata, 
+                     copdata = copdata)
+    g_nel <- skeleton(suffStat, hoeffCItest, alpha = alpha, p = d)
+    g_igraph <- graph_from_adjacency_matrix(as(g_nel, "matrix"), "undirected")
+    sel_comb <- apply(as_edgelist(g_igraph), 2, as.numeric)
   } else {
-    # get direction
-    # dir_comb <- sapply(seq_along(sel_comb), 
-    #                    function(comb) {
-    #                      if (sel_comb[comb] == TRUE) {
-    #                        ures <- p_ures[[comb]]$ures
-    #                        ifelse(rep(pairwise_direction(ures), 2), 
-    #                               all_comb[comb,], rev(all_comb[comb,]))
-    #                      } else {
-    #                        NULL
-    #                      }
-    #                    })
-    # dir_comb <- matrix(unlist(dir_comb), ncol = 2, byrow = TRUE)
-    sel_comb <- apply(all_comb[sel_comb,], 1, function(comb)
+    p_ures <- lapply(1:nrow(all_comb), function(k) {
+      ures <- get_pred(all_comb[k,1], all_comb[k,2], setdiff(all_var, 
+                                                             all_comb[k,]), 
+                       all_comb, udata, copdata)
+      list(p = hoeffd(ures[,1], ures[,2])$P[2],
+           ures = ures)
+    })
+    
+    # select pairs by p-values
+    sel_comb <- all_comb[sapply(p_ures, function(x) x$p < alpha), ]
+  }
+  
+  if (!skeleton) {
+    sel_comb <- apply(sel_comb, 1, function(comb)
       ifelse(rep(pairwise_direction(x[,comb]), 2), rev(comb), comb))
     sel_comb <- t(sel_comb)
   }
-
+  
   # create and return graph
   return(graph_from_edgelist(sel_comb, directed = !skeleton))
 }
 
-get_ij_combs <- function(i, j, all_comb) {
-  sapply(1:nrow(all_comb), function(k) {
-    ifelse((all_comb[k, 1] == i && all_comb[k, 2] != j) || 
-             (all_comb[k, 2] == i && all_comb[k, 1] != j), 
-           1, ifelse((all_comb[k, 1] != i && all_comb[k, 2] == j) || 
-                       (all_comb[k, 2] != i && all_comb[k, 1] == j), 
+get_ijk_combs <- function(i, j, k, all_comb) {
+  sapply(1:nrow(all_comb), function(l) {
+    ifelse((all_comb[l, 1] == i && all_comb[l, 2] %in% k) || 
+             (all_comb[l, 2] == i && all_comb[l, 1] %in% k), 
+           1, ifelse((all_comb[l, 1] %in% k && all_comb[l, 2] == j) || 
+                       (all_comb[l, 2] %in% k && all_comb[l, 1] == j), 
                      2, 0))
   }) 
 }
@@ -119,12 +141,24 @@ get_compl <- function(i, icombs) {
 get_i_data <- function(i, sel_combs, all_comb, copdata) {
   i_combs <- all_comb[sel_combs,]
   i_compl <- get_compl(i, i_combs)
+
   i_data <- copdata[sel_combs]
+  is_bicop <- !is.matrix(i_data[[1]])
   i_data <- lapply(1:length(i_compl), function(k) {
-    if (i_compl[k] < i) {
-      return(t(i_data[[k]]))
+    # compute pdf if not already done
+    if (is_bicop) { 
+      res <- outer(i_data[[k]]$data[,1], i_data[[k]]$data[,2],
+                   function(u1, u2) predict(object = i_data[[k]],
+                                            newdata = cbind(u1, u2),
+                                            what = "pdf"))
     } else {
-      return(i_data[[k]])
+      res <- i_data[[k]]
+    }
+    # transpose when necessary
+    if (i_compl[k] < i) {
+      return(t(res))
+    } else {
+      return(res)
     }
   })
   if (length(i_compl) > 1) {
@@ -134,16 +168,27 @@ get_i_data <- function(i, sel_combs, all_comb, copdata) {
   }
 }
 
-get_pred <- function(i, j, all_comb, udata, copdata) {
-  ij_combs <- get_ij_combs(i, j, all_comb)
-  i_data <- get_i_data(i, ij_combs == 1, all_comb, copdata)
-  j_data <- get_i_data(j, ij_combs == 2, all_comb, copdata)
-  
-  ui <- udata[,i]
-  uj <- udata[,j]
-  predi <- sapply(1:ncol(i_data), function(k) 
-    sum(i_data[,k]*ifelse(ui <= ui[k], 1, 0))/sum(i_data[,k]))
-  predj <- sapply(1:ncol(j_data), function(k) 
-    sum(j_data[,k]*ifelse(uj <= uj[k], 1, 0))/sum(j_data[,k]))
-  cbind(predi, predj)
+get_pred <- function(i, j, k, all_comb, udata, copdata) {
+  if (is.integer(k) && length(k) == 0L) {
+    res <- udata[,c(i,j)]
+  } else {
+    ij_combs <- get_ijk_combs(i, j, k, all_comb)
+    i_data <- get_i_data(i, ij_combs == 1, all_comb, copdata)
+    j_data <- get_i_data(j, ij_combs == 2, all_comb, copdata)
+    
+    ui <- udata[,i]
+    uj <- udata[,j]
+    predi <- sapply(1:nrow(udata), function(l) 
+      sum(i_data[,l]*ifelse(ui <= ui[l], 1, 0))/sum(i_data[,l]))
+    predj <- sapply(1:nrow(udata), function(l) 
+      sum(j_data[,l]*ifelse(uj <= uj[l], 1, 0))/sum(j_data[,l]))
+    res <- cbind(predi, predj)
+  }
+  return(res)
 }
+
+hoeffCItest <- function(x, y, S, suffStat) {
+  ures <- get_pred(x, y, S, suffStat$all_comb, suffStat$udata, suffStat$copdata)
+  hoeffd(ures[,1], ures[,2])$P[2]
+}
+

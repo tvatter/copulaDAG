@@ -13,6 +13,7 @@ Imports:
   assertthat,
   igraph,
   Hmisc,
+  pcalg,
   rvinecopulib,
   stats,
   utils
