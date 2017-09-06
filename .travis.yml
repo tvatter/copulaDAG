@@ -4,9 +4,6 @@ language: R
 warnings_are_errors: true
 
 sudo: required
-
-r_packages:
-  - covr
   
 apt_packages:
   - libv8-dev
@@ -24,7 +21,7 @@ before_install:
   - sudo apt-get install libv8-dev
 
 install:
-  - R -e 'install.packages("devtools")'
+  - R -e 'install.packages(c("devtools","covr"))'
   - R -e 'source("http://bioconductor.org/biocLite.R"); devtools::install_bioc(c("graph","RBGL","Rgraphviz"))'
   - R -e 'devtools::install_deps(dep = T)'
 
