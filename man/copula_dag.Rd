@@ -4,7 +4,8 @@
 \alias{copula_dag}
 \title{Copula-based Directed Acyclic Graph}
 \usage{
-copula_dag(x, alpha = 0.1, pc = TRUE, skeleton = FALSE, ...)
+copula_dag(x, alpha = 0.1, pc = TRUE, skeleton = FALSE, fast = TRUE,
+  ...)
 }
 \arguments{
 \item{x}{a matrix or data frame with more than two columns
@@ -12,14 +13,20 @@ copula_dag(x, alpha = 0.1, pc = TRUE, skeleton = FALSE, ...)
 
 \item{alpha}{a scalar number in (0,1) indicating the level of the test.}
 
+\item{pc}{a logical indicating whether the PC algorithm should be used
+to find the skeleton.}
+
+\item{skeleton}{a logical indicating whether the skeleton only should be
+returned.}
+
+\item{fast}{a logical indicating whether the memory greedy (but faster)
+method should be used.}
+
 \item{...}{additional arguments passed to
 \code{\link[rvinecopulib:bicop]{bicop}}}
-
-\item{skelecton}{a logical indicating whether the skeleton only should be
-returned.}
 }
 \value{
-TODO
+estimated causal DAG and its adjacency matrix
 }
 \description{
 Copula-based Directed Acyclic Graph
@@ -28,5 +35,16 @@ Copula-based Directed Acyclic Graph
 TODO
 }
 \examples{
-TODO 
+
+set.seed(123)
+n <- 500
+X <- rnorm(n)
+Y <- X ^ 2 + rnorm(n)
+Z <- Y / 2 + 1.3 * rnorm(n)
+W <- X + rnorm(n) ^ 3
+dag_data <- cbind(X, Y, Z, W)
+trueDAG <- cbind(c(0, 0, 0, 0), c(1, 0, 0, 0), c(0, 1, 0, 0), c(1, 0, 0, 0))
+
+estDAG <- copula_dag(dag_data, alpha = 0.01)
+
 }
