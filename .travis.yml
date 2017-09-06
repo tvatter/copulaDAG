@@ -5,20 +5,16 @@ warnings_are_errors: true
 
 sudo: required
 
-apt_packages:
-  - r-cran-bh
-  - r-cran-covr
-  - r-cran-lattice
-  - r-cran-rcpp
-  - r-cran-rcppeigen
-  - r-cran-statmod
-  - r-cran-testthat
-
-before_install:
-  - sudo add-apt-repository ppa:marutter/c2d4u -y
-  - sudo apt-get update -q
-  - Rscript -e 'withCallingHandlers(install.packages("devtools", repos="http://cran.rstudio.com/"), warning=function(x) { message(x); quit(status=1, save="no") })'
-  - Rscript -e 'devtools::install_github("vinecopulib/rvinecopulib", ref = "dev")'
+r_packages:
+  - assertthat
+  - covr
+  - igraph
+  - Hmisc
+  - pcalg
+  - rvinecopulib
+  - stats
+  - utils
+  - testthat
 
 repos:
   CRAN: http://cran.rstudio.com
