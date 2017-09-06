@@ -6,15 +6,12 @@ warnings_are_errors: true
 sudo: required
 
 r_packages:
-  - assertthat
   - covr
-  - igraph
-  - Hmisc
-  - pcalg
-  - rvinecopulib
-  - stats
-  - utils
-  - testthat
+
+bioc_packages:
+  - graph
+  - RBGL
+  - Rgraphviz
 
 repos:
   CRAN: http://cran.rstudio.com
