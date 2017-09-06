@@ -4,21 +4,26 @@ language: R
 warnings_are_errors: true
 
 sudo: required
-
+  
 apt_packages:
-  - r-cran-bh
-  - r-cran-covr
-  - r-cran-lattice
-  - r-cran-rcpp
-  - r-cran-rcppeigen
-  - r-cran-statmod
-  - r-cran-testthat
+  - libv8-dev
+  - libcurl4-openssl-dev
+  - libxml2-dev
+  - libudunits2-dev
 
 before_install:
   - sudo add-apt-repository ppa:marutter/c2d4u -y
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -q
-  - Rscript -e 'withCallingHandlers(install.packages("devtools", repos="http://cran.rstudio.com/"), warning=function(x) { message(x); quit(status=1, save="no") })'
-  - Rscript -e 'devtools::install_github("vinecopulib/rvinecopulib", ref = "dev")'
+  - sudo apt-get install gcc-5 g++-5 gfortran-5
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 100
+  - sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-5 100
+  - sudo apt-get install libv8-dev
+
+install:
+  - R -e 'install.packages(c("devtools","covr"))'
+  - R -e 'source("http://bioconductor.org/biocLite.R"); devtools::install_bioc(c("graph","RBGL","Rgraphviz"))'
+  - R -e 'devtools::install_deps(dep = T)'
 
 repos:
   CRAN: http://cran.rstudio.com
