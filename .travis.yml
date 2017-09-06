@@ -23,7 +23,7 @@ before_install:
 
 install:
   - R -e 'install.packages("devtools")'
-  - R -e 'devtools::install_bioc(c("graph","RBGL","Rgraphviz"))'
+  - R -e 'source("http://bioconductor.org/biocLite.R"); devtools::install_bioc(c("graph","RBGL","Rgraphviz"))'
   - R -e 'devtools::install_deps(dep = T)'
 
 repos:
