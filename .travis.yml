@@ -9,6 +9,7 @@ r_packages:
   - covr
   
 apt_packages:
+  - libv8-dev
   - libcurl4-openssl-dev
   - libxml2-dev
   - libudunits2-dev
