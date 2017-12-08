@@ -15,6 +15,7 @@ Imports:
   Hmisc,
   pcalg,
   rvinecopulib,
+  statmod,
   stats,
   utils
 Suggests: 
