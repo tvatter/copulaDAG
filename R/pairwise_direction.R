@@ -30,7 +30,6 @@
 #' @importFrom stats predict
 #' @importFrom rvinecopulib bicop
 #' @importFrom utils modifyList
-#' @importFrom energy eqdist.etest
 #' @importFrom statmod gauss.quad.prob
 pairwise_direction <- function(x, y = NULL, cop = NULL, ...) {
   
