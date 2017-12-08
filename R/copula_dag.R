@@ -23,8 +23,8 @@
 #' n <- 500
 #' X <- rnorm(n)
 #' Y <- X ^ 2 + rnorm(n)
-#' Z <- Y / 2 + 1.3 * rnorm(n)
-#' W <- X + rnorm(n) ^ 3
+#' Z <- Y ^ 4 + 5 * rnorm(n)
+#' W <- X ^ 3 + 2 * rnorm(n)
 #' dag_data <- cbind(X, Y, Z, W)
 #' trueDAG <- cbind(c(0, 0, 0, 0), c(1, 0, 0, 0), c(0, 1, 0, 0), c(1, 0, 0, 0))
 #'
@@ -117,12 +117,16 @@ copula_dag <- function(x, alpha = 0.1,
     # select pairs by p-values
     sel_comb <- all_comb[sapply(p_ures, function(x) x$p < alpha), ]
   }
-  
+
   if (!skeleton) {
     sel_comb <- apply(sel_comb, 1, function(comb)
       # if TRUE, rev order 
       # pairwise_direction(x[,comb]) on raw data, not on residuals
-      ifelse(rep(pairwise_direction(x[,comb]), 2), rev(comb), comb))
+      if (pairwise_direction(x[,comb])) {
+        return(comb)
+      } else {
+        return(rev(comb))
+      })
     sel_comb <- t(sel_comb)
   }
   

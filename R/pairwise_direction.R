@@ -85,7 +85,7 @@ pairwise_direction <- function(x, y = NULL, cop = NULL, ...) {
     h1 <- abs(cor(x, xp))
     h2 <- abs(cor(y, yp))
     
-    ifelse(h1 != h2, h1 > h2, NA)
+    ifelse(h1 != h2, h1 < h2, NA)
   })
   sum(uw$weights[!is.na(h)]*h[!is.na(h)])
 }
