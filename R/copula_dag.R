@@ -127,8 +127,8 @@ copula_dag <- function(x, alpha = 0.1,
   }
   
   # create and return graph and its adjacency matrix
-  estimated_graph = graph_from_edgelist(sel_comb, directed = !skeleton)
-  return(list(graph = estimated_graph, Adj = as_adjacency_matrix(estimated_graph, sparse = FALSE)))
+  estimated_graph <- graph_from_edgelist(sel_comb, directed = !skeleton)
+  return(list(graph <- estimated_graph, Adj = as_adjacency_matrix(estimated_graph, sparse = FALSE)))
 }
 
 get_ijk_combs <- function(i, j, k, all_comb) {
