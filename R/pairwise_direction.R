@@ -30,6 +30,7 @@
 #' @importFrom stats predict
 #' @importFrom rvinecopulib bicop
 #' @importFrom utils modifyList
+#' @importFrom statmod gauss.quad.prob
 pairwise_direction <- function(x, y = NULL, cop = NULL, ...) {
   
   # basic sanity checks
@@ -55,7 +56,7 @@ pairwise_direction <- function(x, y = NULL, cop = NULL, ...) {
     assert_that(any(class(cop) == "bicop"), 
                 msg = "cop should be a bicop object")
   }
-
+  
   # get pseudo-observations (i.e. F(X) and F(Y))
   n <- length(x)
   u1 <- rank(x)/(n+1)
@@ -73,12 +74,17 @@ pairwise_direction <- function(x, y = NULL, cop = NULL, ...) {
     cop <- do.call(bicop, pars)
   }
   
-  # get copula-based F(Y|X) and F(X|Y)
-  u1p <- predict(object = cop, newdata = cbind(u1,u2), what = "hfunc2")
-  u2p <- predict(object = cop, newdata = cbind(u1,u2), what = "hfunc1")
-  
-  # use hoeffd to infer direction
-  h1 <- hoeffd(u2, u1p)$D[2] # F(Y) vs F(X|Y)
-  h2 <- hoeffd(u1, u2p)$D[2] # F(X) vs F(Y|X)
-  ifelse(h1 != h2, h1 < h2, NA)
+  uw <- gauss.quad.prob(5)
+  h <- sapply(uw$nodes, function(uu) {
+    u1p <- predict(object = cop, newdata = cbind(uu, u2), what = "hinv2")
+    u2p <- predict(object = cop, newdata = cbind(u1, uu), what = "hinv1")
+    
+    xp <- quantile(x, u1p)
+    yp <- quantile(y, u2p)
+    h1 <- abs(cor(x, xp))
+    h2 <- abs(cor(y, yp))
+    
+    ifelse(h1 != h2, h1 < h2, NA)
+  })
+  sum(uw$weights[!is.na(h)]*h[!is.na(h)])
 }
