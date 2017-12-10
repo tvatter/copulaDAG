@@ -4,11 +4,11 @@ test_that("function works", {
   
   
   set.seed(123)
-  n <- 5e2
+  n <- 500
   X <- rnorm(n)
   Y <- X ^ 2 + rnorm(n)
-  Z <- Y / 2 + 1.3 * rnorm(n)
-  W <- X + rnorm(n) ^ 3
+  Z <- Y ^ 4 + 5 * rnorm(n)
+  W <- X ^ 3 + 2 * rnorm(n)
   
   dag_data <- cbind(X, Y, Z, W)
   trueDAG <- cbind(c(0, 0, 0, 0), c(1, 0, 0, 0), c(0, 1, 0, 0), c(1, 0, 0, 0))
@@ -25,11 +25,11 @@ test_that("function works", {
 test_that("sanity checks work", {
   
   set.seed(123)
-  n <- 5e2
+  n <- 500
   X <- rnorm(n)
   Y <- X ^ 2 + rnorm(n)
-  Z <- Y / 2 + 1.3 * rnorm(n)
-  W <- X + rnorm(n) ^ 3
+  Z <- Y ^ 4 + 5 * rnorm(n)
+  W <- X ^ 3 + 2 * rnorm(n)
   
   # should throw an error if there are identical variables (? or to handle differently)
   dag_data <- cbind(X, Y, X, W)

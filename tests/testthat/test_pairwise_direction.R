@@ -9,14 +9,14 @@ test_that("function works", {
   X <- NX
   Y <- X^2 + NY
   
-  expect_true(pairwise_direction(X, Y))
+  expect_true(pairwise_direction(X, Y) > 0.5)
   expect_true(pairwise_direction(X, Y, bicop(cbind(rank(X)/(n+1), 
                                                    rank(Y)/(n+1)), 
                                              family_set = "tll", 
-                                             nonpar_method = "constant")))
+                                             nonpar_method = "constant")) > 0.5)
   expect_true(pairwise_direction(X, Y, 
                                  family_set = "tll", 
-                                 nonpar_method = "constant"))
+                                 nonpar_method = "constant") > 0.5)
 })
 
 test_that("sanity checks work", {
